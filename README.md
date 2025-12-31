@@ -128,3 +128,140 @@ Mix Analysis explains why revenue changed between two periods by splitting the c
   | 2         | Price Effect  |
   | 3         | Volume Effect |
   | 4         | Mix Effect    |
+  ```dax
+  _Waterfall Value =
+  VAR Step = SELECTEDVALUE('PMV Steps'[StepName])
+  RETURN
+  SWITCH(
+      Step,
+      "Revenue LY", [_Revenue LY],
+      "Price Effect", [_Price Effect],
+      "Volume Effect", [_Volume Effect],
+      "Mix Effect", [_Mix Effect]
+  )
+  ```
+  - 📌 Enables a **true CFO-grade waterfall**.
+## 🧠 Page 1 — Executive Revenue Narrative
+- **Dynamic Title Measure**
+  ```dax
+  _Page 1 Title = 
+  VAR revchng = [_Revenue Changes]
+  VAR revchngtext = FORMAT(DIVIDE(revchng, 100000), "₹#,##0.00") & " Lakh"
+  VAR ispositiveRev = IF(revchng>0, "grew", "declined")
+  VAR pricetext = FORMAT(DIVIDE([_Price Effect], 100000), "₹#,##0.00") & " Lakh"
+  VAR mixtext = FORMAT(ABS(DIVIDE([_Mix Effect], 100000)), "₹#,##0.00") & " Lakh"
+  VAR PrimaryGrowthDriver =
+      VAR Price = ABS([_Price Effect])
+      VAR Volume = ABS([_Volume Effect])
+      VAR Mix = ABS([_Mix Effect])
+      RETURN
+          SWITCH(
+              TRUE(),
+              Price >= Volume && Price >= Mix && [_Price Effect] < 0, "price decreases",
+              Price >= Volume && Price >= Mix, "price increases",
+              Volume >= Price && Volume >= Mix && [_Volume Effect] < 0, "lower demand",
+              Volume >= Price && Volume >= Mix, "higher demand",
+              "product mix changes"
+          )
+  VAR MixDirection =
+      IF (
+          [_Mix Effect] < 0,
+          "diluted",
+          "supported"
+      )
+  VAR MixCauseText =
+      IF (
+          [_Mix Effect] < 0,
+          "due to higher Economy product share",
+          "supported by premium product mix"
+      )
+  RETURN   
+      "Revenue " & ispositiveRev & " " & revchngtext &
+      ", driven primarily by " & PrimaryGrowthDriver &
+      ", while product mix " & MixDirection & " " & mixtext & " " &
+      MixCauseText & "."
+  ```
+  - This generates insights like:
+    - “Revenue declined ₹2.49 Lakh, driven primarily by lower demand, while product mix diluted ₹0.03 Lakh due to higher Economy product share.”
+  - 📌 Why this matters:
+    - No analyst explanation required
+    - Board-ready narrative
+    - Automatically adapts to slicers
+## 🧭 Page 2 — Who Created Value vs Who Diluted It
+- **Drill Logic**
+  - Uses ```SUMMARIZECOLUMNS + TOPN``` to identify:
+    - Top Region
+    - Top Customer Segment
+    - Top Product
+  - Based on **absolute revenue impact**, not just growth %.
+    ```dax
+    _Page 2 Title = 
+    VAR selyear = SELECTEDVALUE(DimDate[Year])
+    VAR isgrowth = IF([_Revenue Changes]<0, "declination", "growth")
+    VAR selreg = 
+        VAR treg =
+            SUMMARIZECOLUMNS(
+                DimDate[Year],
+                FactSales[Region],
+                "revchng", ABS([_Revenue Changes])
+            )
+        RETURN
+            MAXX(
+                TOPN(
+                    1,
+                    treg,
+                    [revchng],
+                    DESC
+                ),
+                FactSales[Region]
+            )
+    VAR selcus = 
+        VAR tcus =
+            SUMMARIZECOLUMNS(
+                DimDate[Year],
+                FactSales[Customer_Segment],
+                "revchng", ABS([_Revenue Changes])
+            )
+        RETURN
+            MAXX(
+                TOPN(
+                    1,
+                    tcus,
+                    [revchng],
+                    DESC
+                ),           
+                FactSales[Customer_Segment]
+            )
+    VAR selprod = 
+        VAR tprod =
+            SUMMARIZECOLUMNS(
+                DimDate[Year],
+                FactSales[Product],
+                "revchng", ABS([_Revenue Changes])
+            )
+        RETURN
+            MAXX(
+                TOPN(
+                    1,
+                    tprod,
+                    [revchng],
+                    DESC
+                ),
+                FactSales[Product]
+            )
+    VAR MixInsightText =
+        IF (
+            [_Mix Effect] < 0,
+            "while product mix diluted overall revenue",
+            "with product mix supporting revenue growth"
+        )
+    RETURN
+        "In " & selyear & ", revenue " & isgrowth & " was concentrated in " & selreg & "-" & selcus & "-" & selprod & " products," & UNICHAR(10) & MixInsightText
+    ```
+    - 🧠 Insight example:
+      - “In 2022, revenue growth was concentrated in East-SMB-Premium A products, with product mix supporting revenue growth.”
+  - 📌 This answers:
+    - Where to invest
+    - Which segments are fragile
+    - Who is driving real value
+## 🧠 Page 3 — Strategic Risk & Opportunity Lens
