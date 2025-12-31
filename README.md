@@ -265,3 +265,57 @@ Mix Analysis explains why revenue changed between two periods by splitting the c
     - Which segments are fragile
     - Who is driving real value
 ## 🧠 Page 3 — Strategic Risk & Opportunity Lens
+- This page moves from **analysis → decision**.
+- **Growth Quality**
+  ```dax
+  _Growth Quality =
+  IF(
+      ABS([_Price Effect]) > ABS([_Volume Effect]),
+      "⚠ Price-Led Growth",
+      "✅ Demand-Led Growth"
+  )
+  ```
+  - 📌 Price-led growth is **riskier** long-term.
+- **Mix Risk Status**
+  ```dax
+  _Mix Risk Status =
+  IF(
+      [_Mix Effect] < 0,
+      "⚠ Mix Dilution Detected",
+      "✅ Healthy Mix"
+  )
+  ```
+  - 📌 Identifies silent margin erosion.
+- **Strategic Signal**
+  ```dax
+  _Strategic Signal =
+  SWITCH(
+      TRUE(),
+      [_Mix Effect] < 0 && [_Volume Effect] > 0, "Volume without Value",
+      [_Price Effect] > 0 && [_Volume Effect] < 0, "Pricing Masking Demand Weakness",
+      "Balanced Growth"
+  )
+  ```
+  - 🧠 This is **strategy-grade insight**, not reporting.
+## 📈 Trend Layer (5-Year View)
+- Quantity vs Avg Price (dual axis)
+- Total Revenue trend
+- Reveals:
+  - Price inflation masking demand
+  - Volume recovery with margin risk
+  - Structural mix shifts
+## 🎯 Why This Framework Is Different
+| Typical Dashboard | This Framework   |
+| ----------------- | ---------------- |
+| Shows YoY %       | Explains *why*   |
+| Static visuals    | Decision signals |
+| One-time analysis | Reusable model   |
+| Analyst-dependent | Self-narrating   |
+## 🧩 Who Should Use This
+- CFOs & Finance Heads
+- Strategy & FP&A Teams
+- Revenue & Pricing Leaders
+- Power BI Professionals building **executive-grade analytics**
+## 🚀 Final Thought
+  **Revenue growth is meaningless unless you understand its quality.**
+- This Price–Volume–Mix framework turns Power BI from a **reporting tool** into a **strategic decision engine**.
