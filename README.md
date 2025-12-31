@@ -58,5 +58,73 @@ Mix Analysis explains why revenue changed between two periods by splitting the c
   - Average price acts as the bridge between value and volume
 
 ## ⏳ Time Intelligence Measures
+- These create the baseline comparison (Last Year).
+  ```dax
+  _Revenue LY =
+  CALCULATE([_Total Revenue], SAMEPERIODLASTYEAR(DimDate[Date]))
+  
+  _Quantity LY =
+  CALCULATE([_Total Quantity], SAMEPERIODLASTYEAR(DimDate[Date]))
+  
+  _Avg Price LY =
+  CALCULATE([_Avg Price], SAMEPERIODLASTYEAR(DimDate[Date]))
+  ```
+- 📌 Interpretation:
+  - “What would revenue look like if nothing changed except time?”
 
-These create the baseline comparison (Last Year).
+## 🔬 Core PVM Decomposition (The Heart of the Model)
+- Revenue change is split into three mutually exclusive drivers.
+- 1️⃣ **Price Effect**
+  - Impact of price change, assuming last year’s volume
+    ```dax
+    _Price Effect = 
+    VAR pricediff = [_Avg Price] - [_Avg Price LY]
+    RETURN
+        [_Quantity LY] * pricediff
+    ```
+  - 🧠 Business meaning:
+    - Positive → Successful pricing power
+    - Negative → Discounts, competitive pressure, or price erosion
+- 2️⃣ **Volume Effect**
+  - Impact of quantity change, assuming last year’s price
+    ```dax
+    _Volume Effect =
+    VAR voldiff = [_Total Quantity] - [_Quantity LY]
+    RETURN
+        voldiff * [_Avg Price LY]
+    ```
+  - 🧠 Business meaning:
+    - Positive → Real demand growth
+    - Negative → Market slowdown, churn, or lost share
+- 3️⃣ **Mix Effect**
+  - Hidden impact caused by selling a different product mix
+    ```dax
+    _Mix Effect =
+    VAR pricediff = [_Avg Price] - [_Avg Price LY]
+    VAR voldiff = [_Total Quantity] - [_Quantity LY]
+    RETURN
+        IF([_Total Revenue] && [_Revenue LY], voldiff * pricediff)
+    ```
+  - 🧠 Business meaning:
+    - Positive → Shift toward premium / high-margin products
+    - Negative → Growth coming from economy or low-value products
+  - 📌 **This is where most dashboards fail** — mix is invisible unless explicitly modeled.
+- 🔁 **Revenue Change Validation**
+  ```dax
+  _Revenue Changes =
+  IF([_Total Revenue] && [_Revenue LY],
+     [_Total Revenue] - [_Revenue LY]
+  )
+  
+  _PVM Check =
+  [_Price Effect] + [_Volume Effect] + [_Mix Effect]
+  ```
+  - ✔ Ensures mathematical integrity of decomposition.
+## 🧮 Waterfall Logic (Page 1 Visual Engine)
+- **PMV Steps Table**
+  | StepOrder | StepName      |
+  | --------- | ------------- |
+  | 1         | Revenue LY    |
+  | 2         | Price Effect  |
+  | 3         | Volume Effect |
+  | 4         | Mix Effect    |
