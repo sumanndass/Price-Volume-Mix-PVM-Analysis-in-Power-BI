@@ -23,6 +23,7 @@ Mix Analysis explains why revenue changed between two periods by splitting the c
     - Product
     - Quantity
     - Actual_Price
+- Final Power BI file. [Download](https://github.com/sumanndass/Price-Volume-Mix-PVM-Analysis-in-Power-BI/blob/main/PMV%20Analysis.pbix)
 - Date Dimension
   ```dax
   DimDate = 
